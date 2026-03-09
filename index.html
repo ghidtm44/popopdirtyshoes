@@ -113,8 +113,8 @@
       width: 100%;
       max-width: 500px;
       flex: 1;
-      min-height: 0;
-      min-height: min(450px, 58dvh);
+      min-height: 350px;
+      height: 50vh;
       border-radius: 12px;
       overflow: hidden;
       box-shadow: 0 4px 20px rgba(0,0,0,0.15);
@@ -197,7 +197,8 @@
     }
     @media (max-height: 700px) {
       #game-canvas-wrapper {
-        min-height: min(500px, 65dvh);
+        height: 55vh;
+        min-height: 380px;
       }
       #instruction { padding: 4px 8px; font-size: 0.75rem; margin-bottom: 2px; }
       #hud { padding: 6px 10px; margin-bottom: 4px; }
@@ -255,13 +256,11 @@
       const MOVE_SPEED = 6;
 
       function getScale() {
-        const wrapper = document.getElementById('game-canvas-wrapper');
-        const rect = wrapper ? wrapper.getBoundingClientRect() : { width: 400, height: 500 };
-        const w = rect.width || 400;
-        const h = rect.height || 500;
+        const w = canvas.width || 400;
+        const h = canvas.height || 500;
         const scaleW = w / 400;
         const scaleH = h / 500;
-        return Math.min(scaleW, scaleH, 1.2);
+        return Math.max(0.5, Math.min(scaleW, scaleH, 1.2));
       }
       function getStickWidth() { return Math.round(getStickWidth()_BASE * getScale()); }
       function getStickHeight() { return Math.round(getStickHeight()_BASE * getScale()); }
@@ -313,15 +312,17 @@
       function resizeCanvas() {
         const wrapper = document.getElementById('game-canvas-wrapper');
         const rect = wrapper.getBoundingClientRect();
-        canvas.width = rect.width;
-        canvas.height = rect.height;
+        const w = Math.max(rect.width || 300, 200);
+        const h = Math.max(rect.height || 350, 250);
+        canvas.width = w;
+        canvas.height = h;
         if (!gameState.gameOver && gameState.startTime !== null) {
           gameState.stickX = Math.min(gameState.stickX, canvas.width - getStickWidth());
           gameState.stickX = Math.max(0, gameState.stickX);
         } else if (gameState.startTime === null) {
-          gameState.stickX = (canvas.width - getStickWidth()) / 2;
+          gameState.stickX = Math.max(0, (canvas.width - getStickWidth()) / 2);
         }
-        gameState.stickY = canvas.height - getStickHeight() - 10;
+        gameState.stickY = Math.max(0, canvas.height - getStickHeight() - 10);
       }
 
       function formatTime(seconds) {
@@ -583,7 +584,14 @@
       });
 
       window.addEventListener('resize', resizeCanvas);
+      window.addEventListener('load', resizeCanvas);
       resizeCanvas();
+      setTimeout(resizeCanvas, 50);
+      setTimeout(resizeCanvas, 300);
+      const wrapper = document.getElementById('game-canvas-wrapper');
+      if (wrapper && typeof ResizeObserver !== 'undefined') {
+        new ResizeObserver(resizeCanvas).observe(wrapper);
+      }
       const now = Date.now();
       gameState.startTime = now;
       gameState.lastBonusSpawn = now;
