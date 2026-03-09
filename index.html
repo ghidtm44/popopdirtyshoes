@@ -248,8 +248,8 @@
       const finalTimeEl = document.getElementById('final-time');
       const restartBtn = document.getElementById('restart-btn');
 
-      const STICK_WIDTH_BASE = 180;
-      const STICK_HEIGHT_BASE = 270;
+      const STICK_WIDTH_BASE = 120;
+      const STICK_HEIGHT_BASE = 180;
       const DIRT_SIZE_BASE = 50;
       const BONUS_SIZE_BASE = 65;
       const DIRT_SPEED = 2;
@@ -490,8 +490,8 @@
         if (!cw || !ch) return;
         ctx.clearRect(0, 0, cw, ch);
 
-        const sw = Math.max(getStickWidth(), 60);
-        const sh = Math.max(getStickHeight(), 90);
+        const sw = Math.max(getStickWidth(), 40);
+        const sh = Math.max(getStickHeight(), 60);
         const stickImg = gameState.isDirty ? images.dirty : images.clean;
         if (stickImg.complete && stickImg.naturalWidth) {
           ctx.drawImage(stickImg, gameState.stickX, gameState.stickY, sw, sh);
