@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Keep Your Shoes Clean!</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(180deg, #87CEEB 0%, #E0F6FF 100%);
+      min-height: 100vh;
+      overflow: hidden;
+      touch-action: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #game-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 10px;
+    }
+    #instruction {
+      width: 100%;
+      max-width: 500px;
+      padding: 10px 14px;
+      margin-bottom: 8px;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 10px;
+      font-size: 0.9rem;
+      color: #2c3e50;
+      text-align: center;
+      line-height: 1.4;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    #hud {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      width: 100%;
+      max-width: 500px;
+      padding: 12px 16px;
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 12px;
+      margin-bottom: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    #timer {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #2c3e50;
+    }
+    #shoes-status {
+      font-size: 1rem;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+    #shoes-status.clean {
+      color: #27ae60;
+      background: rgba(39, 174, 96, 0.15);
+    }
+    #shoes-status.dirty {
+      color: #c0392b;
+      background: rgba(192, 57, 43, 0.2);
+      animation: dirty-pulse 0.5s ease-out;
+    }
+    @keyframes dirty-pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+    #clean-btn {
+      padding: 12px 32px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      width: 100%;
+      max-width: 280px;
+      color: white;
+      background: #3498db;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      box-shadow: 0 4px 0 #2980b9;
+      transition: transform 0.1s, box-shadow 0.1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #clean-btn:active {
+      transform: translateY(2px);
+      box-shadow: 0 2px 0 #2980b9;
+    }
+    #clean-btn:disabled {
+      background: #95a5a6;
+      box-shadow: 0 4px 0 #7f8c8d;
+      cursor: not-allowed;
+      transform: none;
+    }
+    #game-canvas-wrapper {
+      position: relative;
+      width: 100%;
+      max-width: 500px;
+      flex: 1;
+      min-height: 350px;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+    }
+    #game-canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      background: white;
+    }
+    #bottom-controls {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      margin-top: 12px;
+      width: 100%;
+      max-width: 500px;
+    }
+    #controls {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      padding: 12px;
+    }
+    .control-btn {
+      width: 80px;
+      height: 80px;
+      font-size: 2rem;
+      border: none;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.95);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform 0.1s;
+    }
+    .control-btn:active {
+      transform: scale(0.95);
+    }
+    #game-over-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      padding: 20px;
+      border-radius: 16px;
+    }
+    #game-over-overlay.visible {
+      display: flex;
+    }
+    #game-over-overlay h2 {
+      font-size: 1.75rem;
+      margin-bottom: 10px;
+    }
+    #game-over-overlay p {
+      font-size: 1.1rem;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    #restart-btn {
+      padding: 14px 32px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: white;
+      background: #27ae60;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <p id="instruction">Help Pop Pop avoid dirt while collecting the things he loves. If your shoes get dirty, be sure to clean them.</p>
+    <div id="hud">
+      <span id="timer">0:00</span>
+      <span id="shoes-status" class="clean">Shoes: Clean</span>
+    </div>
+    <div id="game-canvas-wrapper">
+      <canvas id="game-canvas"></canvas>
+      <div id="game-over-overlay">
+        <h2>Game Over!</h2>
+        <p>You let Pop Pop's shoes get too dirty</p>
+        <p id="final-time">Time: 0:00</p>
+        <button id="restart-btn">Play Again</button>
+      </div>
+    </div>
+    <div id="bottom-controls">
+      <button id="clean-btn">clean shoes</button>
+      <div id="controls">
+        <button class="control-btn" id="left-btn">←</button>
+        <button class="control-btn" id="right-btn">→</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      const canvas = document.getElementById('game-canvas');
+      const ctx = canvas.getContext('2d');
+      const timerEl = document.getElementById('timer');
+      const shoesStatusEl = document.getElementById('shoes-status');
+      const cleanBtn = document.getElementById('clean-btn');
+      const leftBtn = document.getElementById('left-btn');
+      const rightBtn = document.getElementById('right-btn');
+      const gameOverOverlay = document.getElementById('game-over-overlay');
+      const finalTimeEl = document.getElementById('final-time');
+      const restartBtn = document.getElementById('restart-btn');
+
+      const STICK_WIDTH = 180;
+      const STICK_HEIGHT = 270;
+      const DIRT_SIZE = 50;
+      const DIRT_SPEED = 2;
+      const MOVE_SPEED = 6;
+      const DIRT_SPAWN_MIN = 800;
+      const DIRT_SPAWN_MAX = 2000;
+      const BONUS_SIZE = 65;
+      const BONUS_SPAWN_MIN = 3500;
+      const BONUS_SPAWN_MAX = 7000;
+      const BONUS_POINTS = 10;
+
+      let gameState = {
+        stickX: 0,
+        stickY: 0,
+        isDirty: false,
+        cleanUsed: false,
+        startTime: null,
+        elapsedSeconds: 0,
+        dirtPiles: [],
+        lastDirtSpawn: 0,
+        nextSpawnDelay: 0,
+        bonusItems: [],
+        lastBonusSpawn: 0,
+        nextBonusSpawnDelay: 0,
+        bonusSeconds: 0,
+        gameOver: false,
+        keys: { left: false, right: false },
+        dirtyFlashUntil: 0,
+        bonusFlashUntil: 0
+      };
+
+      const images = {
+        clean: new Image(),
+        dirty: new Image(),
+        dirt: new Image()
+      };
+
+      images.clean.src = 'assets/clean-c86025e2-f27a-4b55-a392-af4df87fb8c7.png';
+      images.dirty.src = 'assets/dirty-0eb90cf5-403b-4451-a13c-64a4b7126d7a.png';
+      images.dirt.src = 'assets/dirt.png';
+      const bonusImages = [
+        new Image(), new Image(), new Image(), new Image()
+      ];
+      bonusImages[0].src = 'assets/bonus1.png';
+      bonusImages[1].src = 'assets/bonus2.png';
+      bonusImages[2].src = 'assets/bonus3.png';
+      bonusImages[3].src = 'assets/bonus4.png';
+
+      function resizeCanvas() {
+        const wrapper = document.getElementById('game-canvas-wrapper');
+        const rect = wrapper.getBoundingClientRect();
+        canvas.width = rect.width;
+        canvas.height = rect.height;
+        if (!gameState.gameOver && gameState.startTime !== null) {
+          gameState.stickX = Math.min(gameState.stickX, canvas.width - STICK_WIDTH);
+          gameState.stickX = Math.max(0, gameState.stickX);
+        } else if (gameState.startTime === null) {
+          gameState.stickX = (canvas.width - STICK_WIDTH) / 2;
+        }
+        gameState.stickY = canvas.height - STICK_HEIGHT - 10;
+      }
+
+      function formatTime(seconds) {
+        const m = Math.floor(seconds / 60);
+        const s = Math.floor(seconds % 60);
+        return `${m}:${s.toString().padStart(2, '0')}`;
+      }
+
+      function spawnDirt() {
+        const x = Math.random() * (canvas.width - DIRT_SIZE);
+        gameState.dirtPiles.push({
+          x, y: -DIRT_SIZE,
+          width: DIRT_SIZE,
+          height: DIRT_SIZE
+        });
+      }
+
+      function spawnBonus() {
+        const x = Math.random() * (canvas.width - BONUS_SIZE);
+        const type = Math.floor(Math.random() * 4);
+        gameState.bonusItems.push({
+          x, y: -BONUS_SIZE,
+          width: BONUS_SIZE,
+          height: BONUS_SIZE,
+          type
+        });
+      }
+
+      function checkCollision(dirt) {
+        const stickLeft = gameState.stickX;
+        const stickRight = gameState.stickX + STICK_WIDTH;
+        const stickTop = gameState.stickY;
+        const stickBottom = gameState.stickY + STICK_HEIGHT;
+
+        const dirtLeft = dirt.x;
+        const dirtRight = dirt.x + dirt.width;
+        const dirtTop = dirt.y;
+        const dirtBottom = dirt.y + dirt.height;
+
+        return !(stickRight < dirtLeft || stickLeft > dirtRight || stickBottom < dirtTop || stickTop > dirtBottom);
+      }
+
+      function checkBonusCollision(bonus) {
+        const stickLeft = gameState.stickX;
+        const stickRight = gameState.stickX + STICK_WIDTH;
+        const stickTop = gameState.stickY;
+        const stickBottom = gameState.stickY + STICK_HEIGHT;
+        const bonusLeft = bonus.x;
+        const bonusRight = bonus.x + bonus.width;
+        const bonusTop = bonus.y;
+        const bonusBottom = bonus.y + bonus.height;
+        return !(stickRight < bonusLeft || stickLeft > bonusRight || stickBottom < bonusTop || stickTop > bonusBottom);
+      }
+
+      function collectBonus() {
+        gameState.bonusSeconds += BONUS_POINTS;
+        gameState.bonusFlashUntil = Date.now() + 1200;
+      }
+
+      function hitByDirt() {
+        if (gameState.cleanUsed || gameState.isDirty) {
+          gameState.gameOver = true;
+          gameOverOverlay.classList.add('visible');
+          finalTimeEl.textContent = `Time: ${formatTime(gameState.elapsedSeconds + gameState.bonusSeconds)}`;
+        } else {
+          gameState.isDirty = true;
+          gameState.dirtyFlashUntil = Date.now() + 1500;
+          shoesStatusEl.textContent = 'Shoes: Dirty!';
+          shoesStatusEl.className = 'dirty';
+        }
+      }
+
+      function useClean() {
+        if (gameState.isDirty && !gameState.cleanUsed) {
+          gameState.isDirty = false;
+          gameState.cleanUsed = true;
+          cleanBtn.disabled = true;
+          cleanBtn.textContent = 'Used';
+          shoesStatusEl.textContent = 'Shoes: Clean';
+          shoesStatusEl.className = 'clean';
+        }
+      }
+
+      function resetGame() {
+        gameState = {
+          stickX: (canvas.width - STICK_WIDTH) / 2,
+          stickY: canvas.height - STICK_HEIGHT - 10,
+          isDirty: false,
+          cleanUsed: false,
+          startTime: Date.now(),
+          elapsedSeconds: 0,
+          dirtPiles: [],
+          lastDirtSpawn: Date.now(),
+          nextSpawnDelay: DIRT_SPAWN_MIN + Math.random() * (DIRT_SPAWN_MAX - DIRT_SPAWN_MIN),
+          bonusItems: [],
+          lastBonusSpawn: Date.now(),
+          nextBonusSpawnDelay: BONUS_SPAWN_MIN + Math.random() * (BONUS_SPAWN_MAX - BONUS_SPAWN_MIN),
+          bonusSeconds: 0,
+          gameOver: false,
+          keys: { left: false, right: false },
+          dirtyFlashUntil: 0,
+          bonusFlashUntil: 0
+        };
+        cleanBtn.disabled = false;
+        cleanBtn.textContent = 'clean shoes';
+        shoesStatusEl.textContent = 'Shoes: Clean';
+        shoesStatusEl.className = 'clean';
+        gameOverOverlay.classList.remove('visible');
+      }
+
+      function update() {
+        if (gameState.gameOver) return;
+
+        const now = Date.now();
+        gameState.elapsedSeconds = (now - gameState.startTime) / 1000;
+        timerEl.textContent = formatTime(gameState.elapsedSeconds + gameState.bonusSeconds);
+
+        if (gameState.keys.left) gameState.stickX -= MOVE_SPEED;
+        if (gameState.keys.right) gameState.stickX += MOVE_SPEED;
+        gameState.stickX = Math.max(0, Math.min(canvas.width - STICK_WIDTH, gameState.stickX));
+
+        if (now - gameState.lastDirtSpawn > gameState.nextSpawnDelay) {
+          spawnDirt();
+          gameState.lastDirtSpawn = now;
+          gameState.nextSpawnDelay = DIRT_SPAWN_MIN + Math.random() * (DIRT_SPAWN_MAX - DIRT_SPAWN_MIN);
+        }
+
+        if (now - gameState.lastBonusSpawn > gameState.nextBonusSpawnDelay) {
+          spawnBonus();
+          gameState.lastBonusSpawn = now;
+          gameState.nextBonusSpawnDelay = BONUS_SPAWN_MIN + Math.random() * (BONUS_SPAWN_MAX - BONUS_SPAWN_MIN);
+        }
+
+        for (let i = gameState.dirtPiles.length - 1; i >= 0; i--) {
+          const d = gameState.dirtPiles[i];
+          d.y += DIRT_SPEED;
+          if (checkCollision(d)) {
+            gameState.dirtPiles.splice(i, 1);
+            hitByDirt();
+            if (gameState.gameOver) return;
+          } else if (d.y > canvas.height) {
+            gameState.dirtPiles.splice(i, 1);
+          }
+        }
+
+        for (let i = gameState.bonusItems.length - 1; i >= 0; i--) {
+          const b = gameState.bonusItems[i];
+          b.y += DIRT_SPEED;
+          if (checkBonusCollision(b)) {
+            gameState.bonusItems.splice(i, 1);
+            collectBonus();
+          } else if (b.y > canvas.height) {
+            gameState.bonusItems.splice(i, 1);
+          }
+        }
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const stickImg = gameState.isDirty ? images.dirty : images.clean;
+        if (stickImg.complete && stickImg.naturalWidth) {
+          ctx.drawImage(stickImg, gameState.stickX, gameState.stickY, STICK_WIDTH, STICK_HEIGHT);
+        } else {
+          ctx.fillStyle = gameState.isDirty ? '#8B4513' : '#333';
+          ctx.fillRect(gameState.stickX, gameState.stickY, STICK_WIDTH, STICK_HEIGHT);
+        }
+
+        if (images.dirt.complete && images.dirt.naturalWidth) {
+          gameState.dirtPiles.forEach(d => {
+            ctx.drawImage(images.dirt, d.x, d.y, d.width, d.height);
+          });
+        } else {
+          gameState.dirtPiles.forEach(d => {
+            ctx.fillStyle = '#8B4513';
+            ctx.beginPath();
+            ctx.arc(d.x + d.width/2, d.y + d.height/2, d.width/2, 0, Math.PI * 2);
+            ctx.fill();
+          });
+        }
+
+        gameState.bonusItems.forEach(b => {
+          const img = bonusImages[b.type];
+          if (img.complete && img.naturalWidth) {
+            ctx.drawImage(img, b.x, b.y, b.width, b.height);
+          } else {
+            ctx.fillStyle = '#27ae60';
+            ctx.beginPath();
+            ctx.arc(b.x + b.width/2, b.y + b.height/2, b.width/2 - 2, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        });
+
+        if (Date.now() < gameState.dirtyFlashUntil) {
+          const remaining = gameState.dirtyFlashUntil - Date.now();
+          const alpha = Math.min(1, remaining / 500);
+          ctx.save();
+          ctx.font = 'bold 28px -apple-system, BlinkMacSystemFont, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillStyle = `rgba(192, 57, 43, ${alpha})`;
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+          ctx.lineWidth = 3;
+          const msg = 'Shoes Dirty!';
+          ctx.strokeText(msg, canvas.width / 2, canvas.height / 2 - 20);
+          ctx.fillText(msg, canvas.width / 2, canvas.height / 2 - 20);
+          ctx.restore();
+        }
+
+        if (Date.now() < gameState.bonusFlashUntil) {
+          const remaining = gameState.bonusFlashUntil - Date.now();
+          const alpha = Math.min(1, remaining / 400);
+          ctx.save();
+          ctx.font = 'bold 36px -apple-system, BlinkMacSystemFont, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillStyle = `rgba(39, 174, 96, ${alpha})`;
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.95)';
+          ctx.lineWidth = 4;
+          const msg = 'BONUS +10';
+          ctx.strokeText(msg, canvas.width / 2, canvas.height / 2 - 20);
+          ctx.fillText(msg, canvas.width / 2, canvas.height / 2 - 20);
+          ctx.restore();
+        }
+      }
+
+      function gameLoop() {
+        update();
+        draw();
+        requestAnimationFrame(gameLoop);
+      }
+
+      function setupControls() {
+        leftBtn.addEventListener('touchstart', (e) => { e.preventDefault(); gameState.keys.left = true; });
+        leftBtn.addEventListener('touchend', (e) => { e.preventDefault(); gameState.keys.left = false; });
+        rightBtn.addEventListener('touchstart', (e) => { e.preventDefault(); gameState.keys.right = true; });
+        rightBtn.addEventListener('touchend', (e) => { e.preventDefault(); gameState.keys.right = false; });
+
+        leftBtn.addEventListener('mousedown', () => gameState.keys.left = true);
+        leftBtn.addEventListener('mouseup', () => gameState.keys.left = false);
+        leftBtn.addEventListener('mouseleave', () => gameState.keys.left = false);
+        rightBtn.addEventListener('mousedown', () => gameState.keys.right = true);
+        rightBtn.addEventListener('mouseup', () => gameState.keys.right = false);
+        rightBtn.addEventListener('mouseleave', () => gameState.keys.right = false);
+
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'ArrowLeft') gameState.keys.left = true;
+          if (e.key === 'ArrowRight') gameState.keys.right = true;
+        });
+        document.addEventListener('keyup', (e) => {
+          if (e.key === 'ArrowLeft') gameState.keys.left = false;
+          if (e.key === 'ArrowRight') gameState.keys.right = false;
+        });
+      }
+
+      cleanBtn.addEventListener('click', useClean);
+      restartBtn.addEventListener('click', () => {
+        resetGame();
+      });
+
+      window.addEventListener('resize', resizeCanvas);
+      resizeCanvas();
+      const now = Date.now();
+      gameState.startTime = now;
+      gameState.lastBonusSpawn = now;
+      gameState.nextBonusSpawnDelay = BONUS_SPAWN_MIN + Math.random() * (BONUS_SPAWN_MAX - BONUS_SPAWN_MIN);
+      setupControls();
+      gameLoop();
+    })();
+  </script>
+</body>
+</html>
