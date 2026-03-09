@@ -1,0 +1,14 @@
+{
+  "name": "popopdirtyshoes",
+  "version": "1.0.0",
+  "description": "Help Pop Pop avoid dirt while collecting the things he loves",
+  "engines": {
+    "node": "20.x"
+  },
+  "scripts": {
+    "start": "serve -s . -l $PORT"
+  },
+  "dependencies": {
+    "serve": "^14.2.1"
+  }
+}
