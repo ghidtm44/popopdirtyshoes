@@ -218,7 +218,7 @@
       <span id="shoes-status" class="clean">Shoes: Clean</span>
     </div>
     <div id="game-canvas-wrapper">
-      <canvas id="game-canvas"></canvas>
+      <canvas id="game-canvas" width="400" height="500"></canvas>
       <div id="game-over-overlay">
         <h2>Game Over!</h2>
         <p>You let Pop Pop's shoes get too dirty</p>
@@ -248,8 +248,8 @@
       const finalTimeEl = document.getElementById('final-time');
       const restartBtn = document.getElementById('restart-btn');
 
-      const getStickWidth()_BASE = 180;
-      const getStickHeight()_BASE = 270;
+      const STICK_WIDTH_BASE = 180;
+      const STICK_HEIGHT_BASE = 270;
       const DIRT_SIZE_BASE = 50;
       const BONUS_SIZE_BASE = 65;
       const DIRT_SPEED = 2;
@@ -262,8 +262,8 @@
         const scaleH = h / 500;
         return Math.max(0.5, Math.min(scaleW, scaleH, 1.2));
       }
-      function getStickWidth() { return Math.round(getStickWidth()_BASE * getScale()); }
-      function getStickHeight() { return Math.round(getStickHeight()_BASE * getScale()); }
+      function getStickWidth() { return Math.round(STICK_WIDTH_BASE * getScale()); }
+      function getStickHeight() { return Math.round(STICK_HEIGHT_BASE * getScale()); }
       function getDirtSize() { return Math.round(DIRT_SIZE_BASE * getScale()); }
       function getBonusSize() { return Math.round(BONUS_SIZE_BASE * getScale()); }
       const DIRT_SPAWN_MIN = 800;
@@ -311,11 +311,13 @@
 
       function resizeCanvas() {
         const wrapper = document.getElementById('game-canvas-wrapper');
-        const rect = wrapper.getBoundingClientRect();
-        const w = Math.max(rect.width || 300, 200);
-        const h = Math.max(rect.height || 350, 250);
-        canvas.width = w;
-        canvas.height = h;
+        const rect = wrapper ? wrapper.getBoundingClientRect() : {};
+        const w = Math.max(rect.width || 0, 300);
+        const h = Math.max(rect.height || 0, 400);
+        if (w > 0 && h > 0) {
+          canvas.width = w;
+          canvas.height = h;
+        }
         if (!gameState.gameOver && gameState.startTime !== null) {
           gameState.stickX = Math.min(gameState.stickX, canvas.width - getStickWidth());
           gameState.stickX = Math.max(0, gameState.stickX);
@@ -483,14 +485,19 @@
       }
 
       function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const cw = canvas.width;
+        const ch = canvas.height;
+        if (!cw || !ch) return;
+        ctx.clearRect(0, 0, cw, ch);
 
+        const sw = Math.max(getStickWidth(), 60);
+        const sh = Math.max(getStickHeight(), 90);
         const stickImg = gameState.isDirty ? images.dirty : images.clean;
         if (stickImg.complete && stickImg.naturalWidth) {
-          ctx.drawImage(stickImg, gameState.stickX, gameState.stickY, getStickWidth(), getStickHeight());
+          ctx.drawImage(stickImg, gameState.stickX, gameState.stickY, sw, sh);
         } else {
           ctx.fillStyle = gameState.isDirty ? '#8B4513' : '#333';
-          ctx.fillRect(gameState.stickX, gameState.stickY, getStickWidth(), getStickHeight());
+          ctx.fillRect(gameState.stickX, gameState.stickY, sw, sh);
         }
 
         if (images.dirt.complete && images.dirt.naturalWidth) {
