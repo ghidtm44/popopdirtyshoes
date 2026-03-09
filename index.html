@@ -24,44 +24,47 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-start;
       min-height: 100vh;
-      padding: 10px;
+      min-height: 100dvh;
+      padding: calc(6px + env(safe-area-inset-top, 0px)) 8px 0;
     }
     #instruction {
       width: 100%;
       max-width: 500px;
-      padding: 10px 14px;
-      margin-bottom: 8px;
+      padding: 6px 10px;
+      margin-bottom: 4px;
       background: rgba(255, 255, 255, 0.95);
-      border-radius: 10px;
-      font-size: 0.9rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
       color: #2c3e50;
       text-align: center;
-      line-height: 1.4;
+      line-height: 1.3;
       box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      flex-shrink: 0;
     }
     #hud {
       display: flex;
       justify-content: space-between;
       align-items: center;
       flex-wrap: wrap;
-      gap: 8px;
+      gap: 6px;
       width: 100%;
       max-width: 500px;
-      padding: 12px 16px;
+      padding: 8px 12px;
       background: rgba(255, 255, 255, 0.9);
-      border-radius: 12px;
-      margin-bottom: 10px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      border-radius: 10px;
+      margin-bottom: 6px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      flex-shrink: 0;
     }
     #timer {
-      font-size: 1.25rem;
+      font-size: 1.1rem;
       font-weight: 600;
       color: #2c3e50;
     }
     #shoes-status {
-      font-size: 1rem;
+      font-size: 0.9rem;
       font-weight: 600;
       padding: 4px 12px;
       border-radius: 8px;
@@ -110,10 +113,11 @@
       width: 100%;
       max-width: 500px;
       flex: 1;
-      min-height: 350px;
-      border-radius: 16px;
+      min-height: 0;
+      min-height: min(450px, 58dvh);
+      border-radius: 12px;
       overflow: hidden;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
     }
     #game-canvas {
       display: block;
@@ -125,20 +129,22 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 10px;
-      margin-top: 12px;
+      gap: 6px;
+      margin-top: 6px;
+      padding-bottom: env(safe-area-inset-bottom, 8px);
       width: 100%;
       max-width: 500px;
+      flex-shrink: 0;
     }
     #controls {
       display: flex;
-      gap: 20px;
+      gap: 16px;
       justify-content: center;
-      padding: 12px;
+      padding: 6px;
     }
     .control-btn {
-      width: 80px;
-      height: 80px;
+      width: 72px;
+      height: 72px;
       font-size: 2rem;
       border: none;
       border-radius: 50%;
@@ -189,6 +195,18 @@
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
     }
+    @media (max-height: 700px) {
+      #game-canvas-wrapper {
+        min-height: min(500px, 65dvh);
+      }
+      #instruction { padding: 4px 8px; font-size: 0.75rem; margin-bottom: 2px; }
+      #hud { padding: 6px 10px; margin-bottom: 4px; }
+      #clean-btn { padding: 10px 24px; font-size: 1rem; }
+    }
+    @media (max-width: 400px) {
+      #game-container { padding: 4px 6px; }
+      .control-btn { width: 64px; height: 64px; font-size: 1.75rem; }
+    }
   </style>
 </head>
 <body>
@@ -229,14 +247,28 @@
       const finalTimeEl = document.getElementById('final-time');
       const restartBtn = document.getElementById('restart-btn');
 
-      const STICK_WIDTH = 180;
-      const STICK_HEIGHT = 270;
-      const DIRT_SIZE = 50;
+      const getStickWidth()_BASE = 180;
+      const getStickHeight()_BASE = 270;
+      const DIRT_SIZE_BASE = 50;
+      const BONUS_SIZE_BASE = 65;
       const DIRT_SPEED = 2;
       const MOVE_SPEED = 6;
+
+      function getScale() {
+        const wrapper = document.getElementById('game-canvas-wrapper');
+        const rect = wrapper ? wrapper.getBoundingClientRect() : { width: 400, height: 500 };
+        const w = rect.width || 400;
+        const h = rect.height || 500;
+        const scaleW = w / 400;
+        const scaleH = h / 500;
+        return Math.min(scaleW, scaleH, 1.2);
+      }
+      function getStickWidth() { return Math.round(getStickWidth()_BASE * getScale()); }
+      function getStickHeight() { return Math.round(getStickHeight()_BASE * getScale()); }
+      function getDirtSize() { return Math.round(DIRT_SIZE_BASE * getScale()); }
+      function getBonusSize() { return Math.round(BONUS_SIZE_BASE * getScale()); }
       const DIRT_SPAWN_MIN = 800;
       const DIRT_SPAWN_MAX = 2000;
-      const BONUS_SIZE = 65;
       const BONUS_SPAWN_MIN = 3500;
       const BONUS_SPAWN_MAX = 7000;
       const BONUS_POINTS = 10;
@@ -284,12 +316,12 @@
         canvas.width = rect.width;
         canvas.height = rect.height;
         if (!gameState.gameOver && gameState.startTime !== null) {
-          gameState.stickX = Math.min(gameState.stickX, canvas.width - STICK_WIDTH);
+          gameState.stickX = Math.min(gameState.stickX, canvas.width - getStickWidth());
           gameState.stickX = Math.max(0, gameState.stickX);
         } else if (gameState.startTime === null) {
-          gameState.stickX = (canvas.width - STICK_WIDTH) / 2;
+          gameState.stickX = (canvas.width - getStickWidth()) / 2;
         }
-        gameState.stickY = canvas.height - STICK_HEIGHT - 10;
+        gameState.stickY = canvas.height - getStickHeight() - 10;
       }
 
       function formatTime(seconds) {
@@ -299,30 +331,32 @@
       }
 
       function spawnDirt() {
-        const x = Math.random() * (canvas.width - DIRT_SIZE);
+        const ds = getDirtSize();
+        const x = Math.random() * (canvas.width - ds);
         gameState.dirtPiles.push({
-          x, y: -DIRT_SIZE,
-          width: DIRT_SIZE,
-          height: DIRT_SIZE
+          x, y: -ds,
+          width: ds,
+          height: ds
         });
       }
 
       function spawnBonus() {
-        const x = Math.random() * (canvas.width - BONUS_SIZE);
+        const bs = getBonusSize();
+        const x = Math.random() * (canvas.width - bs);
         const type = Math.floor(Math.random() * 4);
         gameState.bonusItems.push({
-          x, y: -BONUS_SIZE,
-          width: BONUS_SIZE,
-          height: BONUS_SIZE,
+          x, y: -bs,
+          width: bs,
+          height: bs,
           type
         });
       }
 
       function checkCollision(dirt) {
         const stickLeft = gameState.stickX;
-        const stickRight = gameState.stickX + STICK_WIDTH;
+        const stickRight = gameState.stickX + getStickWidth();
         const stickTop = gameState.stickY;
-        const stickBottom = gameState.stickY + STICK_HEIGHT;
+        const stickBottom = gameState.stickY + getStickHeight();
 
         const dirtLeft = dirt.x;
         const dirtRight = dirt.x + dirt.width;
@@ -334,9 +368,9 @@
 
       function checkBonusCollision(bonus) {
         const stickLeft = gameState.stickX;
-        const stickRight = gameState.stickX + STICK_WIDTH;
+        const stickRight = gameState.stickX + getStickWidth();
         const stickTop = gameState.stickY;
-        const stickBottom = gameState.stickY + STICK_HEIGHT;
+        const stickBottom = gameState.stickY + getStickHeight();
         const bonusLeft = bonus.x;
         const bonusRight = bonus.x + bonus.width;
         const bonusTop = bonus.y;
@@ -375,8 +409,8 @@
 
       function resetGame() {
         gameState = {
-          stickX: (canvas.width - STICK_WIDTH) / 2,
-          stickY: canvas.height - STICK_HEIGHT - 10,
+          stickX: (canvas.width - getStickWidth()) / 2,
+          stickY: canvas.height - getStickHeight() - 10,
           isDirty: false,
           cleanUsed: false,
           startTime: Date.now(),
@@ -409,7 +443,7 @@
 
         if (gameState.keys.left) gameState.stickX -= MOVE_SPEED;
         if (gameState.keys.right) gameState.stickX += MOVE_SPEED;
-        gameState.stickX = Math.max(0, Math.min(canvas.width - STICK_WIDTH, gameState.stickX));
+        gameState.stickX = Math.max(0, Math.min(canvas.width - getStickWidth(), gameState.stickX));
 
         if (now - gameState.lastDirtSpawn > gameState.nextSpawnDelay) {
           spawnDirt();
@@ -452,10 +486,10 @@
 
         const stickImg = gameState.isDirty ? images.dirty : images.clean;
         if (stickImg.complete && stickImg.naturalWidth) {
-          ctx.drawImage(stickImg, gameState.stickX, gameState.stickY, STICK_WIDTH, STICK_HEIGHT);
+          ctx.drawImage(stickImg, gameState.stickX, gameState.stickY, getStickWidth(), getStickHeight());
         } else {
           ctx.fillStyle = gameState.isDirty ? '#8B4513' : '#333';
-          ctx.fillRect(gameState.stickX, gameState.stickY, STICK_WIDTH, STICK_HEIGHT);
+          ctx.fillRect(gameState.stickX, gameState.stickY, getStickWidth(), getStickHeight());
         }
 
         if (images.dirt.complete && images.dirt.naturalWidth) {
